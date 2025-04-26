@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './services/firebase';
 import './App.css';
 import TokyoImage from './assets/Tokyo.png';
 import FlightDetailsImage from './assets/Flight details.png';
@@ -8,9 +10,35 @@ import ActivitiesImage from './assets/Activities details.png';
 import DaysImage from './assets/acts.png';
 import ProfileIcon from './assets/profile.png';
 import OnboardingImage from './assets/Onboarding.png';
+import LoginModal from './components/LoginModal';
+import ProfileDropdown from './components/ProfileDropdown';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('main');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
+  // Handle profile icon click
+  const handleProfileClick = () => {
+    if (user) {
+      setIsProfileDropdownOpen(!isProfileDropdownOpen);
+    } else {
+      setIsLoginModalOpen(true);
+    }
+  };
   
   // redirect to onboarding
   const handleRedirectClick = () => {
@@ -103,16 +131,27 @@ function App() {
       <div className="app-container">
         <header className="header">
           <div className="header-text">
-            <h1>Hello Kaushik!</h1>
+            <h1>Hello {user ? (user.displayName || 'Traveler') : 'Kaushik'}!</h1>
             <p>Ready for the trip?</p>
           </div>
-          <motion.img 
-            src={ProfileIcon} 
-            alt="Profile" 
-            className="profile-icon"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          />
+          <div style={{ position: 'relative' }}>
+            <motion.img 
+              src={ProfileIcon} 
+              alt="Profile" 
+              className="profile-icon"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleProfileClick}
+              style={{ cursor: 'pointer' }}
+            />
+            {user && (
+              <ProfileDropdown 
+                isOpen={isProfileDropdownOpen} 
+                onClose={() => setIsProfileDropdownOpen(false)} 
+                user={user}
+              />
+            )}
+          </div>
         </header>
         
         <h2>Your Next Destination?</h2>
@@ -262,6 +301,12 @@ function App() {
             style={{ cursor: 'pointer' }}
           />
         </section>
+
+        {/* Login Modal */}
+        <LoginModal 
+          isOpen={isLoginModalOpen} 
+          onClose={() => setIsLoginModalOpen(false)} 
+        />
       </div>
     );
   };
@@ -292,6 +337,11 @@ function App() {
       </div>
     );
   };
+
+  // Show loading
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   // Render the current page based on state
   return currentPage === 'main' ? renderMainDashboard() : renderOnboarding();
