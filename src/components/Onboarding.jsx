@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Onboarding.css'; // Create this CSS file for styling
-
+import './Onboarding.css'; //  CSS file for styling
+// I have used the image export from Figma as the styling for onboarding Page, the given code for cenet is all not visible
 function Onboarding() {
   const navigate = useNavigate();
 

@@ -12,12 +12,12 @@ import OnboardingImage from './assets/Onboarding.png';
 function App() {
   const [currentPage, setCurrentPage] = useState('main');
   
-  // Function to handle image clicks that redirect to onboarding
+  // redirect to onboarding
   const handleRedirectClick = () => {
     setCurrentPage('onboarding');
   };
 
-  // Function to go back to main dashboard
+  //  main dashboard
   const handleBackClick = () => {
     setCurrentPage('main');
   };
@@ -42,7 +42,7 @@ function App() {
     }
   };
 
-  // Hotel data for accommodation section
+  // accommodation section
   const hotels = [
     {
       name: "Shinagawa Prince Hotel",
