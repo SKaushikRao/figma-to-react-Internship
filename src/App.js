@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './services/firebase';
 import './App.css';
 import TokyoImage from './assets/Tokyo.png';
 import FlightDetailsImage from './assets/Flight details.png';
@@ -10,44 +8,36 @@ import ActivitiesImage from './assets/Activities details.png';
 import DaysImage from './assets/acts.png';
 import ProfileIcon from './assets/profile.png';
 import OnboardingImage from './assets/Onboarding.png';
+import Onboarding from './components/Onboarding';
 import LoginModal from './components/LoginModal';
-import ProfileDropdown from './components/ProfileDropdown';
+import { signInWithGoogle } from './services/firebase';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('main');
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
+  // Navigate to different pages
+  const handleNavigate = (page) => {
+    setCurrentPage(page);
+  };
 
-    // Cleanup subscription
-    return () => unsubscribe();
-  }, []);
-
-  // Handle profile icon click
+  // Handle profile icon click to show login modal
   const handleProfileClick = () => {
-    if (user) {
-      setIsProfileDropdownOpen(!isProfileDropdownOpen);
-    } else {
-      setIsLoginModalOpen(true);
-    }
-  };
-  
-  // redirect to onboarding
-  const handleRedirectClick = () => {
-    setCurrentPage('onboarding');
+    setShowLoginModal(true);
   };
 
-  //  main dashboard
-  const handleBackClick = () => {
-    setCurrentPage('main');
+  // Handle login with Google
+  const handleGoogleLogin = () => {
+    signInWithGoogle()
+      .then((result) => {
+        // Handle successful login
+        console.log("User logged in:", result.user);
+        setShowLoginModal(false);
+      })
+      .catch((error) => {
+        // Handle errors
+        console.error("Login error:", error);
+      });
   };
 
   // Animation variants
@@ -131,27 +121,17 @@ function App() {
       <div className="app-container">
         <header className="header">
           <div className="header-text">
-            <h1>Hello {user ? (user.displayName || 'Traveler') : 'Kaushik'}!</h1>
+            <h1>Hello Kaushik!</h1>
             <p>Ready for the trip?</p>
           </div>
-          <div style={{ position: 'relative' }}>
-            <motion.img 
-              src={ProfileIcon} 
-              alt="Profile" 
-              className="profile-icon"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleProfileClick}
-              style={{ cursor: 'pointer' }}
-            />
-            {user && (
-              <ProfileDropdown 
-                isOpen={isProfileDropdownOpen} 
-                onClose={() => setIsProfileDropdownOpen(false)} 
-                user={user}
-              />
-            )}
-          </div>
+          <motion.img 
+            src={ProfileIcon} 
+            alt="Profile" 
+            className="profile-icon"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={signInWithGoogle}
+          />
         </header>
         
         <h2>Your Next Destination?</h2>
@@ -160,7 +140,7 @@ function App() {
             src={TokyoImage} 
             alt="Tokyo" 
             className="trip-banner" 
-            onClick={handleRedirectClick}
+            onClick={() => handleNavigate('onboarding')}
             whileHover={hoverScale}
             whileTap={tapScale}
             style={{ cursor: 'pointer' }}
@@ -181,7 +161,7 @@ function App() {
             className="flight-banner" 
             whileHover={hoverScale}
             whileTap={tapScale}
-            onClick={handleRedirectClick}
+            onClick={() => handleNavigate('onboarding')}
             style={{ cursor: 'pointer' }}
           />
         </section>
@@ -201,7 +181,7 @@ function App() {
                 className={`hotel-card ${hotel.status.toLowerCase()}`}
                 whileHover={hoverScale}
                 whileTap={tapScale}
-                onClick={handleRedirectClick}
+                onClick={() => handleNavigate('onboarding')}
               >
                 <div className="hotel-rating">{hotel.rating}</div>
                 <h3>{hotel.name}</h3>
@@ -229,7 +209,7 @@ function App() {
                 className="activity-card"
                 whileHover={hoverScale}
                 whileTap={tapScale}
-                onClick={handleRedirectClick}
+                onClick={() => handleNavigate('onboarding')}
               >
                 <div className="activity-content">
                   <h3>{activity.name}</h3>
@@ -275,7 +255,7 @@ function App() {
                 className={`calendar-day ${index === 0 ? 'active' : ''}`}
                 whileHover={{ backgroundColor: '#e8eaf6' }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleRedirectClick}
+                onClick={() => handleNavigate('onboarding')}
               >
                 <div className="day-name">{day.day}</div>
                 <div className="day-number">{day.date}</div>
@@ -297,27 +277,26 @@ function App() {
             className="activities-banner" 
             whileHover={hoverScale}
             whileTap={tapScale}
-            onClick={handleRedirectClick}
+            onClick={() => handleNavigate('onboarding')}
             style={{ cursor: 'pointer' }}
           />
         </section>
-
-        {/* Login Modal */}
-        <LoginModal 
-          isOpen={isLoginModalOpen} 
-          onClose={() => setIsLoginModalOpen(false)} 
-        />
       </div>
     );
   };
 
-  // Onboarding content
-  const renderOnboarding = () => {
+  // Onboarding page content
+  const renderOnboardingPage = () => {
+    return <Onboarding onComplete={() => handleNavigate('main')} />;
+  };
+
+  // Legacy Onboarding view for reference (can be removed later)
+  const renderOldOnboarding = () => {
     return (
       <div className="onboarding-view">
         <motion.button 
           className="back-button"
-          onClick={handleBackClick}
+          onClick={() => handleNavigate('main')}
           whileHover={{ backgroundColor: '#3651d3', scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           initial={{ opacity: 0 }}
@@ -338,13 +317,21 @@ function App() {
     );
   };
 
-  // Show loading
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
-
   // Render the current page based on state
-  return currentPage === 'main' ? renderMainDashboard() : renderOnboarding();
+  const renderContent = () => {
+    switch(currentPage) {
+      case 'main':
+        return renderMainDashboard();
+      case 'onboarding':
+        return renderOnboardingPage();
+      case 'old-onboarding':
+        return renderOldOnboarding();
+      default:
+        return renderMainDashboard();
+    }
+  };
+
+  return renderContent();
 }
 
 export default App;
